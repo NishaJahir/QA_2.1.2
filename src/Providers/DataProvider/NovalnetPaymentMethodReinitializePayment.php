@@ -35,8 +35,8 @@ class NovalnetPaymentMethodReinitializePayment
     $basketRepository = pluginApp(BasketRepositoryContract::class);
     $paymentRepository = pluginApp(PaymentRepositoryContract::class);
     $sessionStorage = pluginApp(FrontendSessionStorageFactoryContract::class);
-    $payments = $paymentRepository->getPaymentsByOrderId($order['id']);
-    
+    $tid_status = $paymentHelper->getNovalnetTxStatus($order['id']);
+ 
     // Get payment method Id and status
     foreach($order['properties'] as $property) {
         if($property['typeId'] == 3)
@@ -45,19 +45,6 @@ class NovalnetPaymentMethodReinitializePayment
         }
     }
     
-     // Get transaction status
-    foreach($payments as $payment)
-    {
-        $properties = $payment->properties;
-        foreach($properties as $property)
-        {
-          if ($property->typeId == 30)
-          {
-          $tid_status = $property->value;
-          }
-        }
-    }
-      
       // Changed payment method key
        $paymentKey = $paymentHelper->getPaymentKeyByMop($mopId);
        $name = trim($config->get('Novalnet.' . strtolower($paymentKey) . '_payment_name'));
@@ -83,7 +70,7 @@ class NovalnetPaymentMethodReinitializePayment
       }
        
        // If the Novalnet payments are rejected do the reinitialize payment
-       if( !in_array($tid_status, [75, 85, 86, 90, 91, 98, 99, 100]) ) {
+       if(!empty($tid_status) && !in_array($tid_status, [75, 85, 86, 90, 91, 98, 99, 100]) ) {
           return $twig->render('Novalnet::NovalnetPaymentMethodReinitializePayment', [
             'order' => $order, 
             'paymentMethodId' => $mopId,
