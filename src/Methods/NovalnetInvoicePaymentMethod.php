@@ -22,6 +22,7 @@ use Novalnet\Helper\PaymentHelper;
 use Novalnet\Services\PaymentService;
 use Plenty\Modules\Basket\Models\Basket;
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
+use Plenty\Plugin\Log\Loggable;
 
 /**
  * Class NovalnetPaymentMethod
@@ -30,6 +31,7 @@ use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
  */
 class NovalnetInvoicePaymentMethod extends PaymentMethodService
 {
+   use Loggable;
     /**
      * @var ConfigRepository
      */
@@ -154,8 +156,9 @@ class NovalnetInvoicePaymentMethod extends PaymentMethodService
      *
      * @return bool
      */
-    public function isSwitchableFrom(): bool
+    public function isSwitchableFrom($orderId): bool
     {
+	    $this->getLogger(__METHOD__)->error('CM order ID', $orderId);
 	    return true;
     }
 }
