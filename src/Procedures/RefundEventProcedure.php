@@ -80,12 +80,11 @@ class RefundEventProcedure
         foreach ($order->orderReferences as $orderReference) {
             $parent_order_id = $orderReference->originOrderId;
             $child_order_id = $orderReference->orderId;
-            $order->id = $parent_order_id;
         }
        } 
         
         $payments = pluginApp(\Plenty\Modules\Payment\Contracts\PaymentRepositoryContract::class);  
-       $paymentDetails = $payments->getPaymentsByOrderId($order->id);
+       $paymentDetails = $payments->getPaymentsByOrderId($parent_order_id);
         
        $orderAmount = (float) $order->amounts[0]->invoiceTotal;
        foreach ($paymentDetails as $paymentDetail) {
@@ -94,7 +93,7 @@ class RefundEventProcedure
        
        $paymentKey = $paymentDetails[0]->method->paymentKey;
        $key = $this->paymentService->getkeyByPaymentKey($paymentKey);
-       $parentOrder = $this->transaction->getTransactionData('orderNo', $order->id);
+       $parentOrder = $this->transaction->getTransactionData('orderNo', $parent_order_id);
         $parent_order_amount = $parentOrder[0]->amount;
         foreach ($paymentDetails[0]->properties as $paymentStatus)
         {
@@ -136,7 +135,7 @@ class RefundEventProcedure
                     $paymentData['tid_status'] = $responseData['tid_status'];
                     $paymentData['refunded_amount'] = (float) $orderAmount;
                     $paymentData['child_order_id'] = $child_order_id;
-                    $paymentData['parent_order_id'] = $order->id;
+                    $paymentData['parent_order_id'] = $parent_order_id;
                     $paymentData['parent_tid'] = $parentOrder[0]->tid;
                     $paymentData['parent_order_amount'] = (float) $parent_order_amount;
                     $paymentData['payment_name'] = strtolower($paymentKey);
@@ -144,12 +143,12 @@ class RefundEventProcedure
                     if ($order->typeId == OrderType::TYPE_CREDIT_NOTE) {
                                 $this->paymentHelper->createRefundPayment($paymentDetails, $paymentData, $transactionComments);
                         $updatedAmount =  ( (float) ( $parent_order_amount / 100 ) ) - (float) $orderAmount;
-                        //$updateOrder = $this->paymentHelper->updateOrderAmount($order->id, (float) $updatedAmount);
+                        //$updateOrder = $this->paymentHelper->updateOrderAmount($parent_order_id, (float) $updatedAmount);
                                    
                     } else {
                         $paymentData['tid']         = !empty($responseData['tid']) ? $responseData['tid'] : $parentOrder[0]->tid;
-                        $this->paymentHelper->updatePayments($parentOrder[0]->tid, $responseData['tid_status'], $order->id, true);
-                        //$updateOrder = $this->paymentHelper->updateOrderItem((float) '0.50', $order->id);
+                        $this->paymentHelper->updatePayments($parentOrder[0]->tid, $responseData['tid_status'], $parent_order_id, true);
+                        //$updateOrder = $this->paymentHelper->updateOrderItem((float) '0.50', $parent_order_id);
                         
                     }
 
